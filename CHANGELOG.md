@@ -12,6 +12,8 @@ numbers follow [Semantic Versioning](https://semver.org/).
 - Crisp pixel art on every screen: art pixels are scaled by whole numbers only.
 - A snake to steer: a head, five round body parts and a tail. Drag and it follows your finger,
   tap and it heads that way, or use the arrow keys / WASD. It turns away from the screen edges.
+- Food: yellow dots scattered around the screen. Each dot eaten makes the snake one body part
+  longer. Eat them all to win ("Alles aufgefuttert!"), then tap for a new round.
 - Drawn sprites: any `src/sprites/<name>.png` replaces the placeholder of that name.
 - The version number in the bottom-right corner.
 - `npm run dev:wifi` to play on a phone or tablet on the same Wi-Fi.

@@ -22,18 +22,24 @@ export class Snake {
   heading = 0;
   private head = new Sprite(art("head"));
   private tail = new Sprite(art("tail"));
-  private parts: Sprite[];
+  private parts = [this.head, this.tail];
   // where the head has been, newest first
   private trail: Point[] = [];
 
   constructor(bodyLength: number) {
-    const body = Array.from(
-      { length: bodyLength },
-      () => new Sprite(art("body")),
-    );
-    this.parts = [this.head, ...body, this.tail];
-    for (const part of this.parts) part.anchor.set(0.5);
-    this.view.addChild(...[...this.parts].reverse());
+    this.head.anchor.set(0.5);
+    this.tail.anchor.set(0.5);
+    this.view.addChild(this.tail, this.head);
+    for (let i = 0; i < bodyLength; i++) this.grow();
+  }
+
+  // the tail stays put until the body has stretched out to make room
+  grow() {
+    const part = new Sprite(art("body"));
+    part.anchor.set(0.5);
+    part.position.copyFrom(this.tail.position);
+    this.parts.splice(-1, 0, part);
+    this.view.addChildAt(part, 1);
   }
 
   get x() {

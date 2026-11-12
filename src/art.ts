@@ -11,7 +11,7 @@ import {
 // every picture is SIZE × SIZE art pixels
 export const SIZE = 16;
 
-type Shape = "square" | "circle" | "tile" | "head" | "ball" | "tail";
+type Shape = "square" | "circle" | "tile" | "head" | "ball" | "tail" | "dot";
 type Placeholder = { color: number; shape: Shape };
 
 // placeholders, used when there's no src/sprites/<name>.png
@@ -20,6 +20,7 @@ export const ART = {
   head: { color: 0x6abe30, shape: "head" },
   body: { color: 0x6abe30, shape: "ball" },
   tail: { color: 0x6abe30, shape: "tail" },
+  food: { color: 0xfbf236, shape: "dot" },
 } satisfies Record<string, Placeholder>;
 
 export type ArtName = keyof typeof ART;
@@ -93,6 +94,8 @@ function drawPlaceholder(renderer: Renderer, { color, shape }: Placeholder) {
         .circle(10, 8, 4 - inset)
         .poly([10, 4 + inset, 10, 12 - inset, 1 + 2 * inset, 8]),
     );
+  } else if (shape === "dot") {
+    g.circle(8, 8, 3).fill(color);
   } else {
     if (shape === "square") g.rect(2, 3, 12, 12).fill(color);
     else g.circle(8, 9, 6.5).fill(color);

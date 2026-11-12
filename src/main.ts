@@ -48,13 +48,16 @@ const MIN_VIEW = 160;
   }
 
   function showScene(next: Scene) {
-    sceneLayer.removeChildren();
+    for (const old of sceneLayer.removeChildren()) {
+      old.destroy({ children: true });
+    }
     sceneLayer.addChild(next.view);
     scene = next;
     layout();
   }
 
-  showScene(new Arena(input));
+  const newRound = () => showScene(new Arena(input, newRound));
+  newRound();
 
   app.ticker.add((ticker) => {
     if (app.screen.width !== size.width || app.screen.height !== size.height) {

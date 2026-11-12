@@ -12,18 +12,21 @@ npm run dev
 To play on a phone or tablet on the same Wi-Fi, run `npm run dev:wifi` and open the
 "Network" address it prints.
 
-## Controls
+## How to play
+
+Eat all the yellow dots. Each one makes the snake a bit longer.
 
 The snake never stops. It turns away by itself before it reaches the edge of the screen.
 
-|       | Touch / mouse                                                         | Keyboard      |
-| ----- | --------------------------------------------------------------------- | ------------- |
-| Steer | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
+|                        | Touch / mouse                                                         | Keyboard      |
+| ---------------------- | --------------------------------------------------------------------- | ------------- |
+| Steer                  | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
+| New round, after a win | Tap                                                                   | Enter / Space |
 
 ## Drawing sprites
 
 Every picture is a 16×16 PNG in `src/sprites/`, named after its entry in `ART` in `src/art.ts`
-(`head.png`, `body.png`, `tail.png`). Bigger exports (2×, 10×, …) are shrunk back to 16×16.
+(`head.png`, `body.png`, `tail.png`, `food.png`). Bigger exports (2×, 10×, …) are shrunk back to 16×16.
 If a file is missing, the game draws a coloured placeholder.
 
 Draw the snake's head looking to the right, and the tail with its tip on the left. Both turn

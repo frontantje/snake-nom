@@ -1,3 +1,6 @@
+export const random = (min: number, max: number) =>
+  min + Math.random() * (max - min);
+
 export const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
