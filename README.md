@@ -14,15 +14,20 @@ To play on a phone or tablet on the same Wi-Fi, run `npm run dev:wifi` and open 
 
 ## Controls
 
-|      | Touch / mouse                                      | Keyboard      |
-| ---- | -------------------------------------------------- | ------------- |
-| Walk | Tap where to go, or hold and drag to lead the hero | Arrows / WASD |
+The snake never stops. It turns away by itself before it reaches the edge of the screen.
+
+|       | Touch / mouse                                                         | Keyboard      |
+| ----- | --------------------------------------------------------------------- | ------------- |
+| Steer | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
 
 ## Drawing sprites
 
 Every picture is a 16×16 PNG in `src/sprites/`, named after its entry in `ART` in `src/art.ts`
-(`hero.png`, …). Bigger exports (2×, 10×, …) are shrunk back to 16×16. If a file is missing,
-the game draws a coloured placeholder.
+(`head.png`, `body.png`, `tail.png`). Bigger exports (2×, 10×, …) are shrunk back to 16×16.
+If a file is missing, the game draws a coloured placeholder.
+
+Draw the snake's head looking to the right, and the tail with its tip on the left. Both turn
+with the snake. The body parts don't turn, so draw them however you like.
 
 To add a new picture, add a line to `ART` (the placeholder colour and shape), then draw
 `src/sprites/<name>.png`.
@@ -50,11 +55,12 @@ whether a tablet has loaded the newest build.
 
 ## Make it yours
 
-| To change...                 | Edit                                      |
-| ---------------------------- | ----------------------------------------- |
-| What happens on the screen   | `src/playground.ts`                       |
-| Keys                         | `src/input.ts`                            |
-| Pictures                     | Draw them! See "Drawing sprites" above.   |
-| Placeholder colours, shapes  | `src/art.ts`                              |
-| How much of the world fits   | `MIN_VIEW` in `src/main.ts`               |
-| Background colour            | `background` in `src/main.ts`             |
+| To change...                 | Edit                                    |
+| ---------------------------- | --------------------------------------- |
+| What happens on the screen   | `src/arena.ts`                          |
+| Snake speed, turning, length | `src/snake.ts`, `new Snake(5)` in arena |
+| Keys                         | `src/input.ts`                          |
+| Pictures                     | Draw them! See "Drawing sprites" above. |
+| Placeholder colours, shapes  | `src/art.ts`                            |
+| How much of the world fits   | `MIN_VIEW` in `src/main.ts`             |
+| Background colour            | `background` in `src/main.ts`           |

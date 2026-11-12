@@ -11,12 +11,15 @@ import {
 // every picture is SIZE × SIZE art pixels
 export const SIZE = 16;
 
-type Shape = "square" | "circle" | "tile";
+type Shape = "square" | "circle" | "tile" | "head" | "ball" | "tail";
 type Placeholder = { color: number; shape: Shape };
 
 // placeholders, used when there's no src/sprites/<name>.png
+// head and tail look to the right, the way the snake moves
 export const ART = {
-  hero: { color: 0xe8553e, shape: "square" },
+  head: { color: 0x6abe30, shape: "head" },
+  body: { color: 0x6abe30, shape: "ball" },
+  tail: { color: 0x6abe30, shape: "tail" },
 } satisfies Record<string, Placeholder>;
 
 export type ArtName = keyof typeof ART;
@@ -77,6 +80,19 @@ function drawPlaceholder(renderer: Renderer, { color, shape }: Placeholder) {
     g.rect(0, SIZE - 1, SIZE, 1)
       .rect(SIZE - 1, 0, 1, SIZE - 1)
       .fill({ color: 0x000000, alpha: 0.12 });
+  } else if (shape === "head") {
+    outlined(color, (inset) => g.circle(8, 8, 7 - inset));
+    g.rect(9, 3, 3, 4).rect(9, 9, 3, 4).fill(0xffffff);
+    g.rect(10, 4, 2, 2).rect(10, 10, 2, 2).fill(0x000000);
+  } else if (shape === "ball") {
+    outlined(color, (inset) => g.circle(8, 8, 6 - inset));
+    g.rect(5, 5, 2, 2).fill({ color: 0xffffff, alpha: 0.5 });
+  } else if (shape === "tail") {
+    outlined(color, (inset) =>
+      g
+        .circle(10, 8, 4 - inset)
+        .poly([10, 4 + inset, 10, 12 - inset, 1 + 2 * inset, 8]),
+    );
   } else {
     if (shape === "square") g.rect(2, 3, 12, 12).fill(color);
     else g.circle(8, 9, 6.5).fill(color);
@@ -84,6 +100,13 @@ function drawPlaceholder(renderer: Renderer, { color, shape }: Placeholder) {
     g.rect(5, 7, 2, 2).rect(10, 7, 2, 2).fill(0x000000);
   }
   return render(renderer, g);
+}
+
+// a darker 1px rim keeps overlapping snake parts apart
+function outlined(color: number, shape: (inset: number) => Graphics) {
+  shape(0).fill(color);
+  shape(0).fill({ color: 0x000000, alpha: 0.3 });
+  shape(1).fill(color);
 }
 
 function render(renderer: Renderer, target: Container) {

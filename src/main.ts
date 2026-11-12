@@ -1,7 +1,7 @@
 import { Application, Container, Text, TextureSource } from "pixi.js";
 import { loadArt } from "./art";
+import { Arena } from "./arena";
 import { Input } from "./input";
-import { Playground } from "./playground";
 import type { Scene } from "./scene";
 
 TextureSource.defaultOptions.scaleMode = "nearest";
@@ -54,7 +54,7 @@ const MIN_VIEW = 160;
     layout();
   }
 
-  showScene(new Playground(input));
+  showScene(new Arena(input));
 
   app.ticker.add((ticker) => {
     if (app.screen.width !== size.width || app.screen.height !== size.height) {

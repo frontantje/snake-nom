@@ -1,30 +1,30 @@
-import { Container, FederatedPointerEvent, Rectangle, Sprite } from "pixi.js";
-import { art } from "./art";
+import { Container, FederatedPointerEvent, Rectangle } from "pixi.js";
 import type { Direction, Input } from "./input";
+import { clamp } from "./math";
 import type { Scene } from "./scene";
+import { EDGE_MARGIN, Snake } from "./snake";
 
-// art pixels per second
-const SPEED = 60;
-
-const STEP: Record<Direction, [number, number]> = {
-  up: [0, -1],
-  down: [0, 1],
-  left: [-1, 0],
-  right: [1, 0],
+const KEY_ANGLE: Record<Direction, number> = {
+  right: 0,
+  down: Math.PI / 2,
+  left: Math.PI,
+  up: -Math.PI / 2,
 };
 
-export class Playground implements Scene {
+// art pixels from a tapped spot that count as having reached it
+const ARRIVED = 3;
+
+export class Arena implements Scene {
   readonly view = new Container();
   private world = new Container();
-  private hero = new Sprite(art("hero"));
+  private snake = new Snake(5);
   private target: { x: number; y: number } | null = null;
   private steeringPointer: number | null = null;
   private bounds = new Rectangle();
   private placed = false;
 
   constructor(private input: Input) {
-    this.hero.anchor.set(0.5, 1);
-    this.world.addChild(this.hero);
+    this.world.addChild(this.snake.view);
     this.view.addChild(this.world);
 
     this.view.eventMode = "static";
@@ -42,29 +42,25 @@ export class Playground implements Scene {
   }
 
   update(dt: number) {
-    const { hero, target } = this;
-    const step = SPEED * dt;
+    const { snake, target } = this;
     const direction = this.input.direction;
     if (direction) {
       this.target = null;
-      const [dx, dy] = STEP[direction];
-      hero.x += dx * step;
-      hero.y += dy * step;
+      snake.turnTowards(KEY_ANGLE[direction], dt);
     } else if (target) {
-      const dx = target.x - hero.x;
-      const dy = target.y - hero.y;
-      const distance = Math.hypot(dx, dy);
-      if (distance <= step) {
-        hero.position.set(target.x, target.y);
+      const dx = target.x - snake.x;
+      const dy = target.y - snake.y;
+      const angle = Math.atan2(dy, dx);
+      // a held finger is followed and circled around, a tap is a spot to reach
+      if (this.steeringPointer !== null) {
+        snake.turnTowards(angle, dt);
+      } else if (Math.hypot(dx, dy) < ARRIVED) {
         this.target = null;
       } else {
-        hero.x += (dx / distance) * step;
-        hero.y += (dy / distance) * step;
+        snake.turnTowards(angle, dt, Math.hypot(dx, dy));
       }
     }
-    const halfWidth = hero.width / 2;
-    hero.x = clamp(hero.x, halfWidth, this.bounds.width - halfWidth);
-    hero.y = clamp(hero.y, hero.height, this.bounds.height);
+    snake.move(dt, this.bounds);
   }
 
   resize(width: number, height: number, scale: number) {
@@ -72,16 +68,17 @@ export class Playground implements Scene {
     this.world.scale.set(scale);
     this.bounds = new Rectangle(0, 0, width / scale, height / scale);
     if (!this.placed) {
-      this.hero.position.set(this.bounds.width / 2, this.bounds.height / 2);
+      this.snake.placeAt(this.bounds.width / 2, this.bounds.height / 2, 0);
       this.placed = true;
     }
   }
 
   private aimAt(e: FederatedPointerEvent) {
     const { x, y } = this.world.toLocal(e.global);
-    this.target = { x, y };
+    const { width, height } = this.bounds;
+    this.target = {
+      x: clamp(x, EDGE_MARGIN, width - EDGE_MARGIN),
+      y: clamp(y, EDGE_MARGIN, height - EDGE_MARGIN),
+    };
   }
 }
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);

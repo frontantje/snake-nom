@@ -10,7 +10,8 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 - The game runs in the browser, built with PixiJS, Vite and TypeScript.
 - Crisp pixel art on every screen: art pixels are scaled by whole numbers only.
-- A hero to walk around: tap where to go, hold and drag to lead, or use the arrow keys / WASD.
+- A snake to steer: a head, five round body parts and a tail. Drag and it follows your finger,
+  tap and it heads that way, or use the arrow keys / WASD. It turns away from the screen edges.
 - Drawn sprites: any `src/sprites/<name>.png` replaces the placeholder of that name.
 - The version number in the bottom-right corner.
 - `npm run dev:wifi` to play on a phone or tablet on the same Wi-Fi.
