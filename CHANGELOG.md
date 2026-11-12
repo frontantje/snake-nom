@@ -6,6 +6,8 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-12
+
 ### Added
 
 - The game runs in the browser, built with PixiJS, Vite and TypeScript.
