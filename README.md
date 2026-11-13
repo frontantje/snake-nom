@@ -14,7 +14,7 @@ To play on a phone or tablet on the same Wi-Fi, run `npm run dev:wifi` and open 
 
 ## How to play
 
-Eat all the yellow dots. Each one makes the snake a bit longer.
+Eat all the yellow dots. Each one makes the snake longer and a bit bigger.
 
 The snake never stops. It turns away by itself before it reaches the edge of the screen.
 
@@ -58,12 +58,13 @@ whether a tablet has loaded the newest build.
 
 ## Make it yours
 
-| To change...                 | Edit                                    |
-| ---------------------------- | --------------------------------------- |
-| What happens on the screen   | `src/arena.ts`                          |
-| Snake speed, turning, length | `src/snake.ts`, `new Snake(5)` in arena |
-| Keys                         | `src/input.ts`                          |
-| Pictures                     | Draw them! See "Drawing sprites" above. |
-| Placeholder colours, shapes  | `src/art.ts`                            |
-| How much of the world fits   | `MIN_VIEW` in `src/main.ts`             |
-| Background colour            | `background` in `src/main.ts`           |
+| To change...                       | Edit                                    |
+| ---------------------------------- | --------------------------------------- |
+| What happens on the screen         | `src/arena.ts`                          |
+| Snake speed, turning, size, growth | `src/snake.ts`                          |
+| Dots, starting length              | `src/arena.ts`                          |
+| Keys                               | `src/input.ts`                          |
+| Pictures                           | Draw them! See "Drawing sprites" above. |
+| Placeholder colours, shapes        | `src/art.ts`                            |
+| How much of the world fits         | `MIN_VIEW` in `src/main.ts`             |
+| Background colour                  | `background` in `src/main.ts`           |

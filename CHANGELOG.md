@@ -6,6 +6,14 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The snake starts smaller, and every dot it eats makes it a bit bigger as well as longer.
+
+### Fixed
+
+- The snake could get stuck facing into a corner of the screen.
+
 ## [0.1.0] - 2026-11-12
 
 ### Added

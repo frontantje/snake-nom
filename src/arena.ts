@@ -9,7 +9,7 @@ import { art } from "./art";
 import type { Direction, Input } from "./input";
 import { clamp, random } from "./math";
 import type { Scene } from "./scene";
-import { EDGE_MARGIN, Snake } from "./snake";
+import { Snake } from "./snake";
 
 const KEY_ANGLE: Record<Direction, number> = {
   right: 0,
@@ -24,8 +24,10 @@ const START_LENGTH = 5;
 const FOOD_COUNT = 10;
 // art pixels kept free between two dots, when there's room
 const FOOD_GAP = 14;
-// art pixels between the head's and a dot's centre to eat it
-const EAT_DISTANCE = 10;
+// art pixels, as drawn by the placeholder
+const FOOD_RADIUS = 3;
+// art pixels between the dots and the edges; snakes of any size can reach that far
+const FOOD_MARGIN = 24;
 // seconds after winning before a tap starts the next round, so steering doesn't
 const RESTART_DELAY = 1;
 
@@ -135,7 +137,8 @@ export class Arena implements Scene {
   private eat() {
     const { snake } = this;
     for (const dot of [...this.food.children]) {
-      if (Math.hypot(dot.x - snake.x, dot.y - snake.y) < EAT_DISTANCE) {
+      const reach = snake.radius + FOOD_RADIUS;
+      if (Math.hypot(dot.x - snake.x, dot.y - snake.y) < reach) {
         dot.destroy();
         snake.grow();
       }
@@ -155,14 +158,13 @@ export class Arena implements Scene {
     }
   }
 
-  // EDGE_MARGIN keeps every dot within reach of a tap
   private freeSpot() {
     const { width, height } = this.bounds;
     let spot = { x: 0, y: 0 };
     for (let tries = 0; tries < 20; tries++) {
       spot = {
-        x: random(EDGE_MARGIN, width - EDGE_MARGIN),
-        y: random(EDGE_MARGIN, height - EDGE_MARGIN),
+        x: random(FOOD_MARGIN, width - FOOD_MARGIN),
+        y: random(FOOD_MARGIN, height - FOOD_MARGIN),
       };
       const crowded = this.food.children.some(
         (dot) => Math.hypot(dot.x - spot.x, dot.y - spot.y) < FOOD_GAP,
@@ -175,14 +177,15 @@ export class Arena implements Scene {
   private aimAt(e: FederatedPointerEvent) {
     const { x, y } = this.world.toLocal(e.global);
     const { width, height } = this.bounds;
+    const margin = this.snake.edgeMargin;
     this.target = {
-      x: clamp(x, EDGE_MARGIN, width - EDGE_MARGIN),
-      y: clamp(y, EDGE_MARGIN, height - EDGE_MARGIN),
+      x: clamp(x, margin, width - margin),
+      y: clamp(y, margin, height - margin),
     };
   }
 }
 
 // maps a spot between the margins of one screen size to another
 const stretch = (value: number, from: number, to: number) =>
-  EDGE_MARGIN +
-  ((value - EDGE_MARGIN) * (to - 2 * EDGE_MARGIN)) / (from - 2 * EDGE_MARGIN);
+  FOOD_MARGIN +
+  ((value - FOOD_MARGIN) * (to - 2 * FOOD_MARGIN)) / (from - 2 * FOOD_MARGIN);
