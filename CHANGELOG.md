@@ -6,6 +6,11 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Unit tests for how the snake moves, steers, eats and grows (`npm test`). Publishing runs
+  them before every build.
+
 ## [0.2.0] - 2026-11-13
 
 ### Changed

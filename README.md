@@ -12,6 +12,15 @@ npm run dev
 To play on a phone or tablet on the same Wi-Fi, run `npm run dev:wifi` and open the
 "Network" address it prints.
 
+## Tests
+
+```bash
+npm test
+```
+
+The tests check how the snake moves, steers, eats and grows. They sit next to the code
+(`src/*.test.ts`) and run in Node without a browser. Publishing runs them before every build.
+
 ## How to play
 
 Eat all the yellow dots. Each one makes the snake longer and a bit bigger.
