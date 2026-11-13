@@ -1,5 +1,6 @@
 import {
   Assets,
+  Color,
   Container,
   Graphics,
   Rectangle,
@@ -10,12 +11,13 @@ import {
 
 // every picture is SIZE × SIZE art pixels
 export const SIZE = 16;
+// art pixels, of the placeholder dot
+export const FOOD_RADIUS = 3;
 
 type Shape = "square" | "circle" | "tile" | "head" | "ball" | "tail" | "dot";
 type Placeholder = { color: number; shape: Shape };
 
 // placeholders, used when there's no src/sprites/<name>.png
-// head and tail look to the right, the way the snake moves
 export const ART = {
   head: { color: 0x6abe30, shape: "head" },
   body: { color: 0x6abe30, shape: "ball" },
@@ -58,17 +60,14 @@ export function art(name: ArtName): Texture {
   return textures.get(name) ?? Texture.WHITE;
 }
 
-// exports at 2x, 10x, ... are shrunk back to SIZE
+// exports at 2x, 10x, ... are shrunk back to SIZE and centred
 function fitToSize(renderer: Renderer, texture: Texture) {
   if (texture.width === SIZE && texture.height === SIZE) return texture;
   texture.source.scaleMode = "nearest";
-  const scale = SIZE / Math.max(texture.width, texture.height);
   const sprite = new Sprite(texture);
-  sprite.scale.set(scale);
-  sprite.position.set(
-    (SIZE - texture.width * scale) / 2,
-    SIZE - texture.height * scale,
-  );
+  sprite.anchor.set(0.5);
+  sprite.scale.set(SIZE / Math.max(texture.width, texture.height));
+  sprite.position.set(SIZE / 2);
   const holder = new Container();
   holder.addChild(sprite);
   return render(renderer, holder);
@@ -95,7 +94,7 @@ function drawPlaceholder(renderer: Renderer, { color, shape }: Placeholder) {
         .poly([10, 4 + inset, 10, 12 - inset, 1 + 2 * inset, 8]),
     );
   } else if (shape === "dot") {
-    g.circle(8, 8, 3).fill(color);
+    g.circle(8, 8, FOOD_RADIUS).fill(color);
   } else {
     if (shape === "square") g.rect(2, 3, 12, 12).fill(color);
     else g.circle(8, 9, 6.5).fill(color);
@@ -107,8 +106,7 @@ function drawPlaceholder(renderer: Renderer, { color, shape }: Placeholder) {
 
 // a darker 1px rim keeps overlapping snake parts apart
 function outlined(color: number, shape: (inset: number) => Graphics) {
-  shape(0).fill(color);
-  shape(0).fill({ color: 0x000000, alpha: 0.3 });
+  shape(0).fill(new Color(color).multiply([0.7, 0.7, 0.7]));
   shape(1).fill(color);
 }
 

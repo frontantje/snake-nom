@@ -5,11 +5,11 @@ import {
   Sprite,
   Text,
 } from "pixi.js";
-import { art } from "./art";
+import { art, FOOD_RADIUS } from "./art";
 import type { Direction, Input } from "./input";
-import { clamp, random } from "./math";
+import { angleTo, clamp, distance, type Point, random } from "./math";
 import type { Scene } from "./scene";
-import { Snake } from "./snake";
+import { LOOKAHEAD, Snake } from "./snake";
 
 const KEY_ANGLE: Record<Direction, number> = {
   right: 0,
@@ -24,11 +24,9 @@ const START_LENGTH = 5;
 const FOOD_COUNT = 10;
 // art pixels kept free between two dots, when there's room
 const FOOD_GAP = 14;
-// art pixels, as drawn by the placeholder
-const FOOD_RADIUS = 3;
-// art pixels between the dots and the edges; snakes of any size can reach that far
-const FOOD_MARGIN = 24;
-// seconds after winning before a tap starts the next round, so steering doesn't
+// a tap on a dot this far from the edges brings any snake's head within reach
+const FOOD_MARGIN = LOOKAHEAD;
+// seconds after winning before a tap starts a new round instead of steering
 const RESTART_DELAY = 1;
 
 export class Arena implements Scene {
@@ -45,7 +43,7 @@ export class Arena implements Scene {
       align: "center",
     },
   });
-  private target: { x: number; y: number } | null = null;
+  private target: Point | null = null;
   private steeringPointer: number | null = null;
   private bounds = new Rectangle();
   private placed = false;
@@ -73,10 +71,15 @@ export class Arena implements Scene {
     this.view.on("globalpointermove", (e) => {
       if (e.pointerId === this.steeringPointer) this.aimAt(e);
     });
-    const release = (e: FederatedPointerEvent) => {
+    const release = (e: { pointerId: number }) => {
       if (e.pointerId === this.steeringPointer) this.steeringPointer = null;
     };
     this.view.on("pointerup", release).on("pointerupoutside", release);
+    // Pixi doesn't pass on touches the system cancels, e.g. for an iPad swipe
+    window.addEventListener("pointercancel", release);
+    this.view.on("destroyed", () =>
+      window.removeEventListener("pointercancel", release),
+    );
   }
 
   update(dt: number) {
@@ -94,12 +97,16 @@ export class Arena implements Scene {
     this.view.hitArea = new Rectangle(0, 0, width, height);
     this.world.scale.set(scale);
     this.bounds = new Rectangle(0, 0, width / scale, height / scale);
-    // dots keep their place relative to the screen, so they stay spread out
-    for (const dot of this.food.children) {
-      dot.x = stretch(dot.x, old.width, this.bounds.width);
-      dot.y = stretch(dot.y, old.height, this.bounds.height);
-    }
-    if (!this.placed) {
+    this.target = null;
+    if (this.placed) {
+      // everything keeps its place relative to the screen, so dots stay spread out
+      const map = (point: Point) => ({
+        x: stretch(point.x, old.width, this.bounds.width),
+        y: stretch(point.y, old.height, this.bounds.height),
+      });
+      for (const dot of this.food.children) dot.position.copyFrom(map(dot));
+      this.snake.remap(map);
+    } else {
       this.snake.placeAt(this.bounds.width / 2, this.bounds.height / 2, 0);
       this.scatterFood();
       this.placed = true;
@@ -120,25 +127,21 @@ export class Arena implements Scene {
       this.target = null;
       snake.turnTowards(KEY_ANGLE[direction], dt);
     } else if (target) {
-      const dx = target.x - snake.x;
-      const dy = target.y - snake.y;
-      const angle = Math.atan2(dy, dx);
-      // a held finger is followed and circled around, a tap is a spot to reach
-      if (this.steeringPointer !== null) {
-        snake.turnTowards(angle, dt);
-      } else if (Math.hypot(dx, dy) < ARRIVED) {
+      const away = distance(snake, target);
+      if (away >= ARRIVED) {
+        snake.turnTowards(angleTo(snake, target), dt, away);
+      } else if (this.steeringPointer === null) {
+        // a held finger stays the goal, so the snake loops back through it
         this.target = null;
-      } else {
-        snake.turnTowards(angle, dt, Math.hypot(dx, dy));
       }
     }
   }
 
   private eat() {
     const { snake } = this;
+    const reach = snake.radius + FOOD_RADIUS;
     for (const dot of [...this.food.children]) {
-      const reach = snake.radius + FOOD_RADIUS;
-      if (Math.hypot(dot.x - snake.x, dot.y - snake.y) < reach) {
+      if (distance(dot, snake) < reach) {
         dot.destroy();
         snake.grow();
       }
@@ -166,9 +169,10 @@ export class Arena implements Scene {
         x: random(FOOD_MARGIN, width - FOOD_MARGIN),
         y: random(FOOD_MARGIN, height - FOOD_MARGIN),
       };
-      const crowded = this.food.children.some(
-        (dot) => Math.hypot(dot.x - spot.x, dot.y - spot.y) < FOOD_GAP,
-      );
+      // the snake's head counts too, or a dot could be eaten right away
+      const crowded =
+        distance(this.snake, spot) < FOOD_GAP ||
+        this.food.children.some((dot) => distance(dot, spot) < FOOD_GAP);
       if (!crowded) break;
     }
     return spot;

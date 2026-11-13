@@ -9,10 +9,19 @@ numbers follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The snake starts smaller, and every dot it eats makes it a bit bigger as well as longer.
+- A finger held still leads the snake right through that spot, so it eats a dot under your
+  finger instead of circling around it.
+- Dots can lie a little closer to the edges.
 
 ### Fixed
 
 - The snake could get stuck facing into a corner of the screen.
+- The snake no longer keeps circling where a touch was cancelled, e.g. by a system swipe on the
+  iPad.
+- Turning the tablet keeps the snake in its place on the screen.
+- A round no longer starts with a dot already eaten.
+- Drawings that aren't square are centred instead of sitting at the bottom.
+- The `src/sprites/` folder exists again in a fresh copy of the project, ready for drawings.
 
 ## [0.1.0] - 2026-11-12
 

@@ -1,6 +1,6 @@
 import { Container, Rectangle, Sprite } from "pixi.js";
 import { art } from "./art";
-import { clamp, wrapAngle } from "./math";
+import { angleTo, clamp, distance, type Point, wrapAngle } from "./math";
 
 // art pixels per second
 const SPEED = 50;
@@ -11,13 +11,11 @@ const SPACING = 8;
 // art pixels, at size 1
 const HEAD_RADIUS = 7;
 // art pixels ahead of the head where an edge makes the snake turn away
-const LOOKAHEAD = 16;
+export const LOOKAHEAD = 16;
 // size 1 shows the pictures at their own size
 const START_SIZE = 0.6;
 // size factor for every part gained
 const GROWTH = 1.05;
-
-type Point = { x: number; y: number };
 
 export class Snake {
   readonly view = new Container();
@@ -39,6 +37,7 @@ export class Snake {
   grow() {
     this.addPart();
     this.size *= GROWTH;
+    this.layout();
   }
 
   get x() {
@@ -68,6 +67,12 @@ export class Snake {
     this.layout();
   }
 
+  // keeps the snake's place on a resized screen
+  remap(map: (point: Point) => Point) {
+    this.trail = this.trail.map(map);
+    this.layout();
+  }
+
   // pass distance for a goal that must be reached, not circled around
   turnTowards(angle: number, dt: number, distance = Infinity) {
     const diff = wrapAngle(angle - this.heading);
@@ -79,27 +84,23 @@ export class Snake {
   }
 
   move(dt: number, bounds: Rectangle) {
-    const minX = bounds.left + this.radius;
-    const maxX = bounds.right - this.radius;
-    const minY = bounds.top + this.radius;
-    const maxY = bounds.bottom - this.radius;
+    const room = bounds.clone().pad(-this.radius);
     let dx = Math.cos(this.heading);
     let dy = Math.sin(this.heading);
-    const seeX = this.x + dx * LOOKAHEAD;
-    const seeY = this.y + dy * LOOKAHEAD;
-    if (seeX < minX || seeX > maxX || seeY < minY || seeY > maxY) {
-      const toMiddle = Math.atan2(
-        bounds.y + bounds.height / 2 - this.y,
-        bounds.x + bounds.width / 2 - this.x,
-      );
+    if (!room.contains(this.x + dx * LOOKAHEAD, this.y + dy * LOOKAHEAD)) {
+      const middle = {
+        x: bounds.x + bounds.width / 2,
+        y: bounds.y + bounds.height / 2,
+      };
       // twice the steering rate, so steering into an edge can't win
-      this.turn(wrapAngle(toMiddle - this.heading), 2 * TURN_RATE * dt);
+      const diff = wrapAngle(angleTo(this, middle) - this.heading);
+      this.turn(diff, 2 * TURN_RATE * dt);
       dx = Math.cos(this.heading);
       dy = Math.sin(this.heading);
     }
     this.trail.unshift({
-      x: clamp(this.x + dx * SPEED * dt, minX, maxX),
-      y: clamp(this.y + dy * SPEED * dt, minY, maxY),
+      x: clamp(this.x + dx * SPEED * dt, room.left, room.right),
+      y: clamp(this.y + dy * SPEED * dt, room.top, room.bottom),
     });
     this.layout();
   }
@@ -108,18 +109,16 @@ export class Snake {
     this.heading = wrapAngle(this.heading + clamp(diff, -max, max));
   }
 
-  // the tail stays put until the body has stretched out to make room
   private addPart() {
     const part = new Sprite(art("body"));
     part.anchor.set(0.5);
-    part.position.copyFrom(this.tail.position);
     this.parts.splice(-1, 0, part);
     this.view.addChildAt(part, 1);
   }
 
   private layout() {
-    const { trail, parts, size } = this;
-    parts[0].position.copyFrom(trail[0]);
+    const { trail, parts, size, head, tail } = this;
+    head.position.copyFrom(trail[0]);
     let i = 0;
     let walked = 0;
     for (let n = 1; n < parts.length; n++) {
@@ -131,6 +130,7 @@ export class Snake {
         i++;
       }
       const a = trail[i];
+      // parts past the trail's end wait there, so the tail stays put while the snake grows
       const b = trail[i + 1] ?? a;
       const gap = distance(a, b);
       const t = gap > 0 ? (wanted - walked) / gap : 0;
@@ -139,10 +139,12 @@ export class Snake {
     }
     trail.length = Math.min(trail.length, i + 2);
 
-    face(this.head, this.heading, size);
+    face(head, this.heading, size);
     const ahead = parts[parts.length - 2];
-    const { tail } = this;
-    face(tail, Math.atan2(ahead.y - tail.y, ahead.x - tail.x), size);
+    // right after a bite, the new part and the tail share a spot
+    const angle =
+      distance(ahead, tail) > 0.5 ? angleTo(tail, ahead) : tail.rotation;
+    face(tail, angle, size);
   }
 }
 
@@ -151,5 +153,3 @@ function face(sprite: Sprite, angle: number, size: number) {
   sprite.rotation = angle;
   sprite.scale.set(size, Math.cos(angle) < 0 ? -size : size);
 }
-
-const distance = (a: Point, b: Point) => Math.hypot(b.x - a.x, b.y - a.y);
