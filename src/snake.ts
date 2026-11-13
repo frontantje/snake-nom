@@ -1,5 +1,5 @@
 import { Container, Rectangle, Sprite } from "pixi.js";
-import { art } from "./art";
+import { art, type ArtName } from "./art";
 import { angleTo, clamp, distance, type Point, wrapAngle } from "./math";
 
 // art pixels per second
@@ -10,34 +10,43 @@ const TURN_RATE = 4;
 const SPACING = 8;
 // art pixels, at size 1
 const HEAD_RADIUS = 7;
+const BODY_RADIUS = 6;
 // art pixels ahead of the head where an edge makes the snake turn away
 export const LOOKAHEAD = 16;
+const START_LENGTH = 5;
 // size 1 shows the pictures at their own size
 const START_SIZE = 0.6;
-// size factor for every part gained
+// size factor for every body part gained or lost
 const GROWTH = 1.05;
+// seconds after a bite in which the bitten snake can't bite or be bitten
+const SAFE_TIME = 0.5;
+
+export type Skin = { head: ArtName; body: ArtName; tail: ArtName };
+
+const GREEN: Skin = { head: "head", body: "body", tail: "tail" };
 
 export class Snake {
   readonly view = new Container();
   heading = 0;
-  private size = START_SIZE;
-  private head = new Sprite(art("head"));
-  private tail = new Sprite(art("tail"));
-  private parts = [this.head, this.tail];
+  private skin: Skin;
+  // art pixels per second
+  private speed: number;
+  private head: Sprite;
+  private tail: Sprite;
+  private parts: Sprite[];
   // where the head has been, newest first
   private trail: Point[] = [];
+  private safeFor = 0;
 
-  constructor(bodyLength: number) {
-    this.head.anchor.set(0.5);
-    this.tail.anchor.set(0.5);
+  // speed 1 is the player's
+  constructor({ skin = GREEN, speed = 1, length = START_LENGTH } = {}) {
+    this.skin = skin;
+    this.speed = SPEED * speed;
+    this.head = centred(new Sprite(art(skin.head)));
+    this.tail = centred(new Sprite(art(skin.tail)));
+    this.parts = [this.head, this.tail];
     this.view.addChild(this.tail, this.head);
-    for (let i = 0; i < bodyLength; i++) this.addPart();
-  }
-
-  grow() {
-    this.addPart();
-    this.size *= GROWTH;
-    this.layout();
+    for (let i = 0; i < length; i++) this.addPart();
   }
 
   get x() {
@@ -48,13 +57,60 @@ export class Snake {
     return this.head.y;
   }
 
+  get destroyed() {
+    return this.view.destroyed;
+  }
+
+  // head to tail, without either
+  get body(): readonly Sprite[] {
+    return this.parts.slice(1, -1);
+  }
+
+  get bodyCount() {
+    return this.parts.length - 2;
+  }
+
+  get size() {
+    return START_SIZE * GROWTH ** (this.bodyCount - START_LENGTH);
+  }
+
   get radius() {
     return HEAD_RADIUS * this.size;
+  }
+
+  get partRadius() {
+    return BODY_RADIUS * this.size;
   }
 
   // spots at least this far from the edges can be reached without turning away
   get edgeMargin() {
     return this.radius + LOOKAHEAD;
+  }
+
+  get safe() {
+    return this.safeFor > 0;
+  }
+
+  grow(parts = 1) {
+    for (let i = 0; i < parts; i++) this.addPart();
+    this.layout();
+  }
+
+  biteOff(part: number) {
+    this.parts.splice(part + 1, 1)[0].destroy();
+    this.safeFor = SAFE_TIME;
+    this.layout();
+  }
+
+  // the body part closest to point, if one is nearer than reach
+  partAt(point: Point, reach: number) {
+    let found = -1;
+    let nearest = reach;
+    this.body.forEach((part, i) => {
+      const away = distance(part, point);
+      if (away < nearest) [found, nearest] = [i, away];
+    });
+    return found;
   }
 
   placeAt(x: number, y: number, heading: number) {
@@ -78,7 +134,7 @@ export class Snake {
     const diff = wrapAngle(angle - this.heading);
     const rate = Math.max(
       TURN_RATE,
-      (2.4 * SPEED * Math.abs(Math.sin(diff))) / distance,
+      (2.4 * this.speed * Math.abs(Math.sin(diff))) / distance,
     );
     this.turn(diff, rate * dt);
   }
@@ -99,9 +155,11 @@ export class Snake {
       dy = Math.sin(this.heading);
     }
     this.trail.unshift({
-      x: clamp(this.x + dx * SPEED * dt, room.left, room.right),
-      y: clamp(this.y + dy * SPEED * dt, room.top, room.bottom),
+      x: clamp(this.x + dx * this.speed * dt, room.left, room.right),
+      y: clamp(this.y + dy * this.speed * dt, room.top, room.bottom),
     });
+    this.safeFor = Math.max(0, this.safeFor - dt);
+    this.view.alpha = this.safe && Math.floor(this.safeFor * 8) % 2 ? 0.4 : 1;
     this.layout();
   }
 
@@ -110,8 +168,7 @@ export class Snake {
   }
 
   private addPart() {
-    const part = new Sprite(art("body"));
-    part.anchor.set(0.5);
+    const part = centred(new Sprite(art(this.skin.body)));
     this.parts.splice(-1, 0, part);
     this.view.addChildAt(part, 1);
   }
@@ -146,6 +203,11 @@ export class Snake {
       distance(ahead, tail) > 0.5 ? angleTo(tail, ahead) : tail.rotation;
     face(tail, angle, size);
   }
+}
+
+function centred(sprite: Sprite) {
+  sprite.anchor.set(0.5);
+  return sprite;
 }
 
 // pictures look to the right; heading left mirrors them instead of turning them upside down

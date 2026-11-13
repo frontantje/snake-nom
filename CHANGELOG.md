@@ -8,8 +8,21 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Unit tests for how the snake moves, steers, eats and grows (`npm test`). Publishing runs
-  them before every build.
+- A red snake that goes for dots or for other snakes, the player's included. Blue and pink
+  ones are ready for later levels.
+- Nibbling: a head that touches another snake's body bites that one part off, whatever the
+  sizes, and grows by one part. A snake that was just bitten blinks for half a second, and can't
+  bite or be bitten during that time. A snake with no body left is eaten when another head touches its head.
+- A ring and "Du!" point out your snake for the first seconds of a round.
+- The other snakes can be drawn too: `redHead.png`, `blueBody.png`, `pinkTail.png`, and so on.
+- Unit tests for how the snakes move, steer, eat, grow and fight (`npm test`). Publishing
+  runs them before every build.
+
+### Changed
+
+- A round ends when all dots are gone, and the biggest snake wins. It also ends when your
+  head gets eaten.
+- A snake's size now follows its length, so it shrinks again when it loses parts.
 
 ## [0.2.0] - 2026-11-13
 

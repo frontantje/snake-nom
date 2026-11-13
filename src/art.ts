@@ -22,6 +22,15 @@ export const ART = {
   head: { color: 0x6abe30, shape: "head" },
   body: { color: 0x6abe30, shape: "ball" },
   tail: { color: 0x6abe30, shape: "tail" },
+  redHead: { color: 0xd95763, shape: "head" },
+  redBody: { color: 0xd95763, shape: "ball" },
+  redTail: { color: 0xd95763, shape: "tail" },
+  blueHead: { color: 0x639bff, shape: "head" },
+  blueBody: { color: 0x639bff, shape: "ball" },
+  blueTail: { color: 0x639bff, shape: "tail" },
+  pinkHead: { color: 0xd77bba, shape: "head" },
+  pinkBody: { color: 0xd77bba, shape: "ball" },
+  pinkTail: { color: 0xd77bba, shape: "tail" },
   food: { color: 0xfbf236, shape: "dot" },
 } satisfies Record<string, Placeholder>;
 

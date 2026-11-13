@@ -18,19 +18,27 @@ To play on a phone or tablet on the same Wi-Fi, run `npm run dev:wifi` and open 
 npm test
 ```
 
-The tests check how the snake moves, steers, eats and grows. They sit next to the code
+The tests check how the snakes move, steer, eat, grow and fight. They sit next to the code
 (`src/*.test.ts`) and run in Node without a browser. Publishing runs them before every build.
 
 ## How to play
 
-Eat all the yellow dots. Each one makes the snake longer and a bit bigger.
+You're the green snake; at the start of a round, a ring and "Du!" point it out. A red snake is
+after the yellow dots too, and after you.
 
-The snake never stops. It turns away by itself before it reaches the edge of the screen.
+- Every dot makes a snake one part longer and a bit bigger.
+- A head that touches another snake's body bites that one part off, whatever the sizes. The
+  biter gets one part longer, the bitten snake one part shorter. After a bite, the bitten snake
+  blinks for half a second: it can't be bitten again, and it can't bite back.
+- A snake with no body left gets eaten when another head touches its head.
+- When all dots are gone, the biggest snake wins. If your head gets eaten, the round is over.
 
-|                        | Touch / mouse                                                         | Keyboard      |
-| ---------------------- | --------------------------------------------------------------------- | ------------- |
-| Steer                  | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
-| New round, after a win | Tap                                                                   | Enter / Space |
+The snakes never stop. They turn away by themselves before they reach the edge of the screen.
+
+|                              | Touch / mouse                                                         | Keyboard      |
+| ---------------------------- | --------------------------------------------------------------------- | ------------- |
+| Steer                        | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
+| New round, after a round end | Tap                                                                   | Enter / Space |
 
 ## Drawing sprites
 
@@ -38,7 +46,10 @@ Every picture is a 16×16 PNG in `src/sprites/`, named after its entry in `ART` 
 (`head.png`, `body.png`, `tail.png`, `food.png`). Bigger exports (2×, 10×, …) are shrunk back to 16×16.
 If a file is missing, the game draws a coloured placeholder.
 
-Draw the snake's head looking to the right, and the tail with its tip on the left. Both turn
+The other snakes have their own pictures: `redHead.png`, `redBody.png`, `redTail.png`, and the
+same with `blue` and `pink`.
+
+Draw a snake's head looking to the right, and the tail with its tip on the left. Both turn
 with the snake. The body parts don't turn, so draw them however you like.
 
 To add a new picture, add a line to `ART` (the placeholder colour and shape), then draw
@@ -67,13 +78,14 @@ whether a tablet has loaded the newest build.
 
 ## Make it yours
 
-| To change...                       | Edit                                    |
-| ---------------------------------- | --------------------------------------- |
-| What happens on the screen         | `src/arena.ts`                          |
-| Snake speed, turning, size, growth | `src/snake.ts`                          |
-| Dots, starting length              | `src/arena.ts`                          |
-| Keys                               | `src/input.ts`                          |
-| Pictures                           | Draw them! See "Drawing sprites" above. |
-| Placeholder colours, shapes        | `src/art.ts`                            |
-| How much of the world fits         | `MIN_VIEW` in `src/main.ts`             |
-| Background colour                  | `background` in `src/main.ts`           |
+| To change...                                        | Edit                                    |
+| --------------------------------------------------- | --------------------------------------- |
+| What happens on the screen                          | `src/arena.ts`                          |
+| Snake speed, turning, size, growth, starting length | `src/snake.ts`                          |
+| Dots, number and speed of the other snakes          | `src/arena.ts`                          |
+| How the other snakes choose what to go for          | `src/rival.ts`                          |
+| Keys                                                | `src/input.ts`                          |
+| Pictures                                            | Draw them! See "Drawing sprites" above. |
+| Placeholder colours, shapes                         | `src/art.ts`                            |
+| How much of the world fits                          | `MIN_VIEW` in `src/main.ts`             |
+| Background colour                                   | `background` in `src/main.ts`           |

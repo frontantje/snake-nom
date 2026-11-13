@@ -25,7 +25,7 @@ describe("Snake", () => {
   it("stays on the screen, whichever way it's steered", () => {
     for (let seed = 1; seed <= 20; seed++) {
       const random = seeded(seed);
-      const snake = new Snake(5);
+      const snake = new Snake();
       snake.placeAt(120, 80, 0);
       let goal = 0;
       run(snake, 20, () => {
@@ -47,7 +47,7 @@ describe("Snake", () => {
       { x: SCREEN.width, y: SCREEN.height },
     ];
     for (const corner of corners) {
-      const snake = new Snake(5);
+      const snake = new Snake();
       snake.placeAt(120, 80, angleTo({ x: 120, y: 80 }, corner));
       for (let second = 0; second < 10; second += 0.5) {
         const before = { x: snake.x, y: snake.y };
@@ -58,7 +58,7 @@ describe("Snake", () => {
   });
 
   it("gets one part longer and a bit bigger with every bite", () => {
-    const snake = new Snake(5);
+    const snake = new Snake();
     snake.placeAt(120, 80, 0);
     const count = parts(snake).length;
     const radius = snake.radius;
@@ -70,7 +70,7 @@ describe("Snake", () => {
   });
 
   it("keeps its parts evenly spaced, also after growing", () => {
-    const snake = new Snake(5);
+    const snake = new Snake();
     snake.placeAt(60, 80, 0);
     run(snake, 1);
     const before = gaps(snake);
@@ -85,7 +85,7 @@ describe("Snake", () => {
   });
 
   it("points the tail the right way right after a bite", () => {
-    const snake = new Snake(5);
+    const snake = new Snake();
     snake.placeAt(180, 80, Math.PI);
     // long enough to leave the straight line it was placed on
     run(snake, 1.5);
@@ -94,5 +94,22 @@ describe("Snake", () => {
     snake.grow();
 
     run(snake, 0.5, () => expect(Math.cos(tail.rotation)).toBeCloseTo(-1, 6));
+  });
+
+  it("loses just the bitten part, shrinks a bit, and is safe for a moment", () => {
+    const snake = new Snake();
+    snake.placeAt(120, 80, 0);
+    run(snake, 1);
+    const [a, b, bitten, d, e] = snake.body;
+    const radius = snake.radius;
+
+    snake.biteOff(2);
+
+    expect(snake.body).toEqual([a, b, d, e]);
+    expect(bitten.destroyed).toBe(true);
+    expect(snake.radius).toBeLessThan(radius);
+    expect(snake.safe).toBe(true);
+    run(snake, 0.6);
+    expect(snake.safe).toBe(false);
   });
 });
