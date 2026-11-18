@@ -6,6 +6,8 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-18
+
 ### Added
 
 - A start screen with your snake circling under "Mompf so viel du kannst!". The game starts
