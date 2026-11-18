@@ -6,6 +6,13 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A start screen with your snake circling under "Mompf so viel du kannst!". The game starts
+  on a tap (or Enter / Space) instead of right away.
+- Balancing notes in `BALANCING.md`: every value that makes the game easier or harder, ideas
+  to try, and a play test log.
+
 ## [0.3.0] - 2026-11-13
 
 ### Added

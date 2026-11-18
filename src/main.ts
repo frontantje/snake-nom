@@ -3,6 +3,7 @@ import { loadArt } from "./art";
 import { Arena } from "./arena";
 import { Input } from "./input";
 import type { Scene } from "./scene";
+import { StartScreen } from "./start";
 
 TextureSource.defaultOptions.scaleMode = "nearest";
 
@@ -57,7 +58,7 @@ const MIN_VIEW = 160;
   }
 
   const newRound = () => showScene(new Arena(input, newRound));
-  newRound();
+  showScene(new StartScreen(input, newRound));
 
   app.ticker.add((ticker) => {
     if (app.screen.width !== size.width || app.screen.height !== size.height) {

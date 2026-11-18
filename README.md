@@ -23,6 +23,9 @@ The tests check how the snakes move, steer, eat, grow and fight. They sit next t
 
 ## How to play
 
+The game opens with a start screen ("Mompf so viel du kannst!") showing your snake; a tap
+starts the first round.
+
 You're the green snake; at the start of a round, a ring and "Du!" point it out. A red snake is
 after the yellow dots too, and after you.
 
@@ -37,6 +40,7 @@ The snakes never stop. They turn away by themselves before they reach the edge o
 
 |                              | Touch / mouse                                                         | Keyboard      |
 | ---------------------------- | --------------------------------------------------------------------- | ------------- |
+| Start, on the start screen   | Tap                                                                   | Enter / Space |
 | Steer                        | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
 | New round, after a round end | Tap                                                                   | Enter / Space |
 
@@ -84,6 +88,7 @@ whether a tablet has loaded the newest build.
 | Snake speed, turning, size, growth, starting length | `src/snake.ts`                          |
 | Dots, number and speed of the other snakes          | `src/arena.ts`                          |
 | How the other snakes choose what to go for          | `src/rival.ts`                          |
+| How hard it is                                      | [BALANCING.md](BALANCING.md)            |
 | Keys                                                | `src/input.ts`                          |
 | Pictures                                            | Draw them! See "Drawing sprites" above. |
 | Placeholder colours, shapes                         | `src/art.ts`                            |
