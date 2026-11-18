@@ -2,6 +2,7 @@ import { Application, Container, Text, TextureSource } from "pixi.js";
 import { loadArt } from "./art";
 import { Arena } from "./arena";
 import { Input } from "./input";
+import { Progress } from "./progress";
 import type { Scene } from "./scene";
 import { StartScreen } from "./start";
 
@@ -57,8 +58,14 @@ const MIN_VIEW = 160;
     layout();
   }
 
-  const newRound = () => showScene(new Arena(input, newRound));
-  showScene(new StartScreen(input, newRound));
+  const progress = new Progress();
+  const showStart = (level: number) =>
+    showScene(new StartScreen(input, progress, level, play));
+  const play = (level: number) =>
+    showScene(
+      new Arena(input, level, (won) => showStart(progress.finish(level, won))),
+    );
+  showStart(progress.unlocked);
 
   app.ticker.add((ticker) => {
     if (app.screen.width !== size.width || app.screen.height !== size.height) {

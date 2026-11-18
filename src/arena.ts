@@ -2,6 +2,7 @@ import { Container, FederatedPointerEvent, Rectangle, Sprite } from "pixi.js";
 import { art, FOOD_RADIUS } from "./art";
 import type { Direction, Input } from "./input";
 import { makeLabel, sizeLabel } from "./label";
+import { LAST_LEVEL, type Level, LEVELS } from "./levels";
 import { Marker } from "./marker";
 import { angleTo, clamp, distance, type Point, random } from "./math";
 import { Rival } from "./rival";
@@ -17,21 +18,18 @@ const KEY_ANGLE: Record<Direction, number> = {
 
 // art pixels from a tapped spot that count as having reached it
 const ARRIVED = 3;
-const FOOD_COUNT = 10;
 // art pixels kept free between two dots, when there's room
 const FOOD_GAP = 14;
 // a tap on a dot this far from the edges brings any snake's head within reach
 const FOOD_MARGIN = LOOKAHEAD;
-const RIVALS = 1;
-// compared to the player's speed
-const RIVAL_SPEED = 0.8;
 const RIVAL_SKINS: Skin[] = [
   { head: "redHead", body: "redBody", tail: "redTail" },
   { head: "blueHead", body: "blueBody", tail: "blueTail" },
   { head: "pinkHead", body: "pinkBody", tail: "pinkTail" },
+  { head: "orangeHead", body: "orangeBody", tail: "orangeTail" },
 ];
-// seconds after a round ends before a tap starts a new one instead of steering
-const RESTART_DELAY = 1;
+// seconds after a round ends before a tap moves on instead of steering
+const MOVE_ON_DELAY = 1;
 
 export class Arena implements Scene {
   readonly view = new Container();
@@ -45,17 +43,19 @@ export class Arena implements Scene {
   private steeringPointer: number | null = null;
   private bounds = new Rectangle();
   private placed = false;
-  // seconds since the round ended
-  private overFor: number | null = null;
+  // time counts the seconds since the round ended
+  private over: { won: boolean; time: number } | null = null;
 
+  // settings are the level's own unless given, e.g. by tests
   constructor(
     private input: Input,
-    private newRound: () => void,
-    rivals = RIVALS,
+    private level: number,
+    private done: (won: boolean) => void,
+    private settings: Level = LEVELS[level - 1],
   ) {
-    this.rivals = Array.from({ length: rivals }, (_, i) => {
+    this.rivals = Array.from({ length: settings.rivals }, (_, i) => {
       const skin = RIVAL_SKINS[i % RIVAL_SKINS.length];
-      return new Rival(new Snake({ skin, speed: RIVAL_SPEED }));
+      return new Rival(new Snake({ skin, speed: settings.rivalSpeed }));
     });
     // the player's snake comes last, so it's drawn on top
     this.world.addChild(this.food, ...this.snakes.map((snake) => snake.view));
@@ -65,8 +65,8 @@ export class Arena implements Scene {
 
     this.view.eventMode = "static";
     this.view.on("pointerdown", (e) => {
-      if (this.canRestart) {
-        this.newRound();
+      if (this.canMoveOn) {
+        this.done(this.over!.won);
         return;
       }
       this.steeringPointer = e.pointerId;
@@ -94,13 +94,15 @@ export class Arena implements Scene {
     }
     for (const snake of snakes) snake.move(dt, this.bounds);
     this.marker.update(dt, this.player, this.world);
-    if (this.overFor === null) {
+    if (!this.over) {
       this.eat();
       this.fight();
       this.checkForEnd();
     } else {
-      this.overFor += dt;
-      if (this.canRestart && this.input.wasPressed("confirm")) this.newRound();
+      this.over.time += dt;
+      if (this.canMoveOn && this.input.wasPressed("confirm")) {
+        this.done(this.over.won);
+      }
     }
   }
 
@@ -133,8 +135,8 @@ export class Arena implements Scene {
     return this.player ? [...rivals, this.player] : rivals;
   }
 
-  private get canRestart() {
-    return (this.overFor ?? 0) > RESTART_DELAY;
+  private get canMoveOn() {
+    return (this.over?.time ?? 0) > MOVE_ON_DELAY;
   }
 
   // the player in the middle, the rivals around it, circling
@@ -175,7 +177,7 @@ export class Arena implements Scene {
       for (const dot of [...this.food.children]) {
         if (distance(dot, snake) < reach) {
           dot.destroy();
-          snake.grow();
+          this.feed(snake);
         }
       }
     }
@@ -192,21 +194,27 @@ export class Arena implements Scene {
           const hit = victim.partAt(attacker, victim.partRadius + reach);
           if (hit >= 0) {
             victim.biteOff(hit);
-            attacker.grow();
+            this.feed(attacker, victim);
           }
         } else if (distance(attacker, victim) < victim.radius + reach) {
-          attacker.grow();
+          this.feed(attacker, victim);
           this.remove(victim);
         }
       }
     }
   }
 
+  // every dot and every bite goes through here, so rivals know what they ate
+  private feed(snake: Snake, victim: Snake | null = null) {
+    snake.grow();
+    this.rivals.find((rival) => rival.snake === snake)?.ate(victim);
+  }
+
   private remove(snake: Snake) {
     snake.view.destroy({ children: true });
     if (snake === this.player) {
       this.player = null;
-      this.end("Oh nein, gefressen!");
+      this.end(false, "Oh nein, gefressen!\nNochmal? Tippen!");
     } else {
       this.rivals = this.rivals.filter((rival) => rival.snake !== snake);
     }
@@ -216,20 +224,24 @@ export class Arena implements Scene {
   private checkForEnd() {
     if (!this.player || this.food.children.length > 0) return;
     const longest = Math.max(0, ...this.rivals.map((r) => r.snake.bodyCount));
-    this.end(
-      this.player.bodyCount >= longest ? "Gewonnen!" : "Leider zu kurz!",
-    );
+    if (this.player.bodyCount < longest) {
+      this.end(false, "Leider zu kurz!\nNochmal? Tippen!");
+    } else if (this.level === LAST_LEVEL) {
+      this.end(true, "Alle Level geschafft!\nTippen!");
+    } else {
+      this.end(true, "Gewonnen!\nWeiter? Tippen!");
+    }
   }
 
-  private end(message: string) {
-    if (this.overFor !== null) return;
-    this.overFor = 0;
-    this.banner.text = `${message}\nNochmal? Tippen!`;
+  private end(won: boolean, text: string) {
+    if (this.over) return;
+    this.over = { won, time: 0 };
+    this.banner.text = text;
     this.banner.visible = true;
   }
 
   private scatterFood() {
-    for (let i = 0; i < FOOD_COUNT; i++) {
+    for (let i = 0; i < this.settings.dots; i++) {
       const dot = new Sprite(art("food"));
       dot.anchor.set(0.5);
       dot.position.copyFrom(this.freeSpot());

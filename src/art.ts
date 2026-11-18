@@ -31,6 +31,9 @@ export const ART = {
   pinkHead: { color: 0xd77bba, shape: "head" },
   pinkBody: { color: 0xd77bba, shape: "ball" },
   pinkTail: { color: 0xd77bba, shape: "tail" },
+  orangeHead: { color: 0xdf7126, shape: "head" },
+  orangeBody: { color: 0xdf7126, shape: "ball" },
+  orangeTail: { color: 0xdf7126, shape: "tail" },
   food: { color: 0xfbf236, shape: "dot" },
 } satisfies Record<string, Placeholder>;
 

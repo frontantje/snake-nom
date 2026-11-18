@@ -23,26 +23,32 @@ The tests check how the snakes move, steer, eat, grow and fight. They sit next t
 
 ## How to play
 
-The game opens with a start screen ("Mompf so viel du kannst!") showing your snake; a tap
-starts the first round.
+There are 10 levels. The start screen ("Mompf so viel du kannst!") shows your snake and the
+next level; a tap plays it. Won levels can be played again: pick one with `<` and `>`. The
+browser remembers which levels are won.
 
-You're the green snake; at the start of a round, a ring and "Du!" point it out. A red snake is
-after the yellow dots too, and after you.
+You're the green snake; at the start of a round, a ring and "Du!" point it out. The other
+snakes are after the yellow dots too, and after you. After biting you, a snake goes for
+something else first: a dot, or another snake. Level 1 has one of them, level 2 two,
+level 5 three and level 8 four. From level 3, they get a bit faster each level and there are
+more dots.
 
 - Every dot makes a snake one part longer and a bit bigger.
 - A head that touches another snake's body bites that one part off, whatever the sizes. The
   biter gets one part longer, the bitten snake one part shorter. After a bite, the bitten snake
   blinks for half a second: it can't be bitten again, and it can't bite back.
 - A snake with no body left gets eaten when another head touches its head.
-- When all dots are gone, the biggest snake wins. If your head gets eaten, the round is over.
+- When all dots are gone, the biggest snake wins. If that's you, the next level opens. If your
+  head gets eaten, the round is over.
 
 The snakes never stop. They turn away by themselves before they reach the edge of the screen.
 
-|                              | Touch / mouse                                                         | Keyboard      |
-| ---------------------------- | --------------------------------------------------------------------- | ------------- |
-| Start, on the start screen   | Tap                                                                   | Enter / Space |
-| Steer                        | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
-| New round, after a round end | Tap                                                                   | Enter / Space |
+|                                             | Touch / mouse                                                         | Keyboard      |
+| ------------------------------------------- | --------------------------------------------------------------------- | ------------- |
+| Pick a level, on the start screen           | Tap `<` or `>`                                                        | Left / right  |
+| Start, on the start screen                  | Tap                                                                   | Enter / Space |
+| Steer                                       | Hold and drag: the snake follows your finger. Tap: it heads that way. | Arrows / WASD |
+| Back to the start screen, after a round end | Tap                                                                   | Enter / Space |
 
 ## Drawing sprites
 
@@ -51,7 +57,7 @@ Every picture is a 16×16 PNG in `src/sprites/`, named after its entry in `ART` 
 If a file is missing, the game draws a coloured placeholder.
 
 The other snakes have their own pictures: `redHead.png`, `redBody.png`, `redTail.png`, and the
-same with `blue` and `pink`.
+same with `blue`, `pink` and `orange`.
 
 Draw a snake's head looking to the right, and the tail with its tip on the left. Both turn
 with the snake. The body parts don't turn, so draw them however you like.
@@ -86,7 +92,7 @@ whether a tablet has loaded the newest build.
 | --------------------------------------------------- | --------------------------------------- |
 | What happens on the screen                          | `src/arena.ts`                          |
 | Snake speed, turning, size, growth, starting length | `src/snake.ts`                          |
-| Dots, number and speed of the other snakes          | `src/arena.ts`                          |
+| Levels: other snakes, their speed, dots             | `src/levels.ts`                         |
 | How the other snakes choose what to go for          | `src/rival.ts`                          |
 | How hard it is                                      | [BALANCING.md](BALANCING.md)            |
 | Keys                                                | `src/input.ts`                          |

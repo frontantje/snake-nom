@@ -1,21 +1,40 @@
-import { type FederatedPointerEvent, Point } from "pixi.js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { type FederatedPointerEvent, Point, type Sprite } from "pixi.js";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 import { Arena } from "./arena";
 import { FOOD_RADIUS } from "./art";
-import type { Input } from "./input";
+import type { Action, Input } from "./input";
+import { LAST_LEVEL, LEVELS } from "./levels";
 import { distance } from "./math";
 import { DT, seeded, strip } from "./testing";
 
 const WIDTH = 240;
 const HEIGHT = 160;
 
-const noKeys = { direction: null, wasPressed: () => false } as unknown as Input;
+// pressed: the keys that count as just pressed in every frame
+const keys = {
+  direction: null,
+  pressed: [] as Action[],
+  wasPressed(action: Action) {
+    return this.pressed.includes(action);
+  },
+};
 
 const arenas: Arena[] = [];
+let done: Mock<(won: boolean) => void>;
 
 beforeEach(() => {
   vi.stubGlobal("window", new EventTarget());
   vi.spyOn(Math, "random").mockImplementation(seeded(7));
+  done = vi.fn();
+  keys.pressed = [];
 });
 
 // like the game does when a round ends
@@ -23,11 +42,19 @@ afterEach(() => {
   for (const arena of arenas.splice(0)) arena.view.destroy({ children: true });
 });
 
-function newArena(rivals = 0) {
-  const arena = new Arena(noKeys, () => {}, rivals);
+// the tests' own settings, so balancing the levels doesn't change them
+function newArena(rivals = 0, dots = 10, level = 1) {
+  const settings = { rivals, rivalSpeed: 0.8, dots };
+  const arena = new Arena(keys as unknown as Input, level, done, settings);
   arena.resize(WIDTH, HEIGHT, 1);
   arenas.push(arena);
   return arena;
+}
+
+// waits until the round-end message can be tapped away, then taps it
+function tapAfterEnd(arena: Arena) {
+  runUntil(arena, 1.1, () => false);
+  touch(arena, "pointerdown", 10, 10);
 }
 
 const playerOf = (arena: Arena) => arena["player"]!;
@@ -189,6 +216,27 @@ describe("Arena", () => {
     expect(player.bodyCount).toBe(parts - 1);
   });
 
+  it("sends a rival elsewhere after a bite, and back once it has eaten a dot", () => {
+    const arena = newArena(1);
+    const player = playerOf(arena);
+    const rival = rivalOf(arena);
+    const dot = lastDot(arena, 30, 30);
+    player.placeAt(120, 80, 0);
+    const part = player.body[2];
+    rival.placeAt(part.x, part.y - 1, Math.PI / 2);
+
+    arena.update(DT);
+    expect(player.bodyCount).toBe(4);
+
+    const goal = () => arena["rivals"][0]["goal"] as Sprite | null;
+    const goesForPlayer = () => player.body.includes(goal()!);
+    runUntil(arena, 5, () => goesForPlayer() || dot.destroyed);
+    expect(dot.destroyed).toBe(true);
+    expect(rival.bodyCount).toBe(7);
+
+    expect(runUntil(arena, 2, goesForPlayer)).toBe(true);
+  });
+
   it("can't kill a snake that still has a body", () => {
     const arena = newArena(1);
     const player = playerOf(arena);
@@ -236,10 +284,17 @@ describe("Arena", () => {
     expect(runUntil(arena, 1, () => player.destroyed)).toBe(true);
     expect(arena["player"]).toBeNull();
     expect(arena["banner"].text).toContain("gefressen");
+    expect(arena["banner"].text).toContain("Nochmal");
+
+    touch(arena, "pointerdown", 10, 10);
+    expect(done).not.toHaveBeenCalled();
+    tapAfterEnd(arena);
+    expect(done).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it("ends the round when the dots are gone, won if no rival is longer", () => {
     for (const rivalParts of [0, 20]) {
+      done.mockClear();
       const arena = newArena(1);
       const player = playerOf(arena);
       const rival = rivalOf(arena);
@@ -252,11 +307,53 @@ describe("Arena", () => {
       expect(arena["banner"].visible).toBe(false);
       runUntil(arena, 1, () => last.destroyed);
 
+      const won = rivalParts === 0;
       expect(arena["banner"].visible).toBe(true);
-      expect(arena["banner"].text).toContain(
-        rivalParts === 0 ? "Gewonnen" : "zu kurz",
-      );
+      expect(arena["banner"].text).toContain(won ? "Gewonnen" : "zu kurz");
+      expect(arena["banner"].text).toContain(won ? "Weiter" : "Nochmal");
+
+      tapAfterEnd(arena);
+      expect(done).toHaveBeenCalledExactlyOnceWith(won);
     }
+  });
+
+  it("says that all levels are done when the last one is won", () => {
+    const arena = newArena(0, 10, LAST_LEVEL);
+    const player = playerOf(arena);
+    const last = lastDot(arena, player.x + 20, player.y);
+
+    runUntil(arena, 1, () => last.destroyed);
+
+    expect(arena["banner"].text).toContain("Alle Level geschafft");
+    expect(arena["banner"].text).not.toContain("Weiter");
+  });
+
+  it("moves on with Enter or Space too, but only after a moment", () => {
+    const arena = newArena();
+    const player = playerOf(arena);
+    const last = lastDot(arena, player.x + 20, player.y);
+    runUntil(arena, 1, () => last.destroyed);
+    const movedOn = () => done.mock.calls.length > 0;
+
+    keys.pressed = ["confirm"];
+
+    expect(runUntil(arena, 0.9, movedOn)).toBe(false);
+    expect(runUntil(arena, 0.5, movedOn)).toBe(true);
+    expect(done).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it("gives every rival its own colour, up to the most any level has", () => {
+    const most = Math.max(...LEVELS.map((level) => level.rivals));
+    const arena = newArena(most);
+
+    const skins = arena["rivals"].map((rival) => rival.snake["skin"]);
+
+    expect(new Set(skins).size).toBe(most);
+  });
+
+  it("scatters as many dots as the level asks for", () => {
+    expect(dotsOf(newArena(0, 3))).toHaveLength(3);
+    expect(dotsOf(newArena(0, 26))).toHaveLength(26);
   });
 
   it("has rivals that go and eat dots", () => {

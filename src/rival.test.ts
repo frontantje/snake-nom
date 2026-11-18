@@ -64,6 +64,54 @@ describe("Rival", () => {
     expect(rival["goal"]).toBeNull();
   });
 
+  describe("after biting a snake", () => {
+    // `bitten` is nearer, so it's the goal whenever it's allowed
+    function setUp() {
+      const rival = rivalAt(60, 80);
+      const bitten = snakeAt(150, 80);
+      const other = snakeAt(150, 140);
+      const snakes = [rival.snake, bitten, other];
+      const goalIn = (snake: Snake) =>
+        snake.body.some((part) => part === rival["goal"]);
+      const think = (seconds: number) => {
+        for (let frame = 0; frame < seconds / DT; frame++) {
+          rival.update(DT, [], snakes);
+        }
+      };
+      think(DT);
+      expect(goalIn(bitten)).toBe(true);
+      rival.ate(bitten);
+      return { rival, bitten, other, goalIn, think };
+    }
+
+    it("goes for something else next", () => {
+      const { other, goalIn, think } = setUp();
+
+      for (let second = 0; second < 5; second++) {
+        think(1);
+        expect(goalIn(other)).toBe(true);
+      }
+    });
+
+    it("may go for that snake again once it has bitten another one", () => {
+      const { rival, bitten, other, goalIn, think } = setUp();
+
+      rival.ate(other);
+      think(DT);
+
+      expect(goalIn(bitten)).toBe(true);
+    });
+
+    it("may go for that snake again once it has eaten a dot", () => {
+      const { rival, bitten, goalIn, think } = setUp();
+
+      rival.ate(null);
+      think(1);
+
+      expect(goalIn(bitten)).toBe(true);
+    });
+  });
+
   it("picks a new goal when its goal is gone", () => {
     const rival = rivalAt(60, 80);
     const first = { x: 75, y: 80, destroyed: false };

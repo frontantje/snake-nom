@@ -9,9 +9,26 @@ numbers follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - A start screen with your snake circling under "Mompf so viel du kannst!". The game starts
-  on a tap (or Enter / Space) instead of right away.
-- Balancing notes in `BALANCING.md`: every value that makes the game easier or harder, ideas
-  to try, and a play test log.
+  on a tap (or Enter / Space) instead of right away. Taps in its first moment don't count, so
+  a tap meant for the round before can't skip it.
+- 10 levels. Level 2 brings a second rival, level 5 a third and level 8 a fourth; from level 3
+  the rivals get a bit faster and there are more dots every level. All levels are in
+  `src/levels.ts`.
+- Between levels, the start screen shows which level comes next. Won levels can be played
+  again: pick one with `<` and `>` (or the arrow keys). An arrow fades when there's no level
+  that way.
+- The browser remembers which levels are won, also when the game is open in several tabs.
+- Winning the last level says "Alle Level geschafft!".
+- An orange rival, so up to four rivals all look different.
+- Balancing notes in `BALANCING.md`: every value that makes the game easier or harder, the
+  level table, ideas to try, and a play test log.
+
+### Changed
+
+- The rival in level 1 is slower: 0.65 of your speed instead of 0.8.
+- After a round, a tap goes back to the start screen instead of straight into a new round.
+- After biting a snake, a rival goes for something else first. Only once it has eaten a dot or
+  bitten another snake can it go after the first one again.
 
 ## [0.3.0] - 2026-11-13
 

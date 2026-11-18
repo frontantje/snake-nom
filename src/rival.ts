@@ -17,8 +17,16 @@ export class Rival {
   // every rival likes dots and fighting a bit differently
   private appetite = random(0.5, 1.5);
   private aggression = random(0.2, 1);
+  // left alone until this rival has eaten a dot or bitten another snake
+  private lastBitten: Snake | null = null;
 
   constructor(readonly snake: Snake) {}
+
+  // victim is the snake it bit, or null for a dot
+  ate(victim: Snake | null) {
+    this.lastBitten = victim;
+    this.goal = null;
+  }
 
   update(dt: number, dots: readonly Goal[], snakes: readonly Snake[]) {
     this.thinkIn -= dt;
@@ -36,7 +44,9 @@ export class Rival {
   private choose(dots: readonly Goal[], snakes: readonly Snake[]) {
     const options: [Goal, number][] = dots.map((dot) => [dot, this.appetite]);
     for (const other of snakes) {
-      if (other === this.snake || other.safe) continue;
+      if (other === this.snake || other === this.lastBitten || other.safe) {
+        continue;
+      }
       const { body } = other;
       if (body.length === 0)
         options.push([other, HEAD_WORTH * this.aggression]);
