@@ -27,6 +27,13 @@ describe("LEVELS", () => {
     }
   });
 
+  it("starts with 30 second rounds and makes them longer from level 3 on", () => {
+    expect(level(1).seconds).toBe(30);
+    for (let n = 3; n <= LEVELS.length; n++) {
+      expect(level(n).seconds).toBeGreaterThan(level(n - 1).seconds);
+    }
+  });
+
   it("never makes rivals as fast as the player", () => {
     for (const l of LEVELS) expect(l.rivalSpeed).toBeLessThan(1);
   });

@@ -1,6 +1,7 @@
 import { type FederatedPointerEvent, Point } from "pixi.js";
 import { describe, expect, it, vi } from "vitest";
 import type { Action, Input } from "./input";
+import { LEVELS } from "./levels";
 import { distance } from "./math";
 import { Progress } from "./progress";
 import { StartScreen } from "./start";
@@ -121,6 +122,16 @@ describe("StartScreen", () => {
     const right = startScreen({ completed: 3, pressed: ["right"] }).screen;
     right.update(DT);
     expect(levelShown(right)).toBe("Level 4");
+  });
+
+  it("shows how long the shown level lasts", () => {
+    const { screen } = startScreen({ completed: 2 });
+    const seconds = () => screen["secondsLabel"].text;
+    expect(seconds()).toBe(`${LEVELS[2].seconds} Sekunden`);
+
+    tap(screen, arrow(screen, back));
+
+    expect(seconds()).toBe(`${LEVELS[1].seconds} Sekunden`);
   });
 
   it("shows no arrows before the first win", () => {

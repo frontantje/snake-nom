@@ -4,6 +4,7 @@ import type { Direction, Input } from "./input";
 import { makeLabel, sizeLabel } from "./label";
 import { LAST_LEVEL, type Level, LEVELS } from "./levels";
 import { Marker } from "./marker";
+import { Ranking } from "./ranking";
 import { angleTo, clamp, distance, type Point, random } from "./math";
 import { Rival } from "./rival";
 import type { Scene } from "./scene";
@@ -30,6 +31,8 @@ const RIVAL_SKINS: Skin[] = [
 ];
 // seconds after a round ends before a tap moves on instead of steering
 const MOVE_ON_DELAY = 1;
+// seconds left when the clock turns red
+const HURRY = 5;
 
 export class Arena implements Scene {
   readonly view = new Container();
@@ -38,7 +41,10 @@ export class Arena implements Scene {
   private player: Snake | null = new Snake();
   private rivals: Rival[];
   private marker = new Marker();
+  private ranking: Ranking;
+  private clock = makeLabel();
   private banner = makeLabel();
+  private timeLeft: number;
   private target: Point | null = null;
   private steeringPointer: number | null = null;
   private bounds = new Rectangle();
@@ -59,9 +65,19 @@ export class Arena implements Scene {
     });
     // the player's snake comes last, so it's drawn on top
     this.world.addChild(this.food, ...this.snakes.map((snake) => snake.view));
+    this.ranking = new Ranking(this.snakes, this.player!);
+    this.timeLeft = settings.seconds;
+    this.clock.anchor.set(0.5, 0);
+    this.showTime();
     this.banner.anchor.set(0.5);
     this.banner.visible = false;
-    this.view.addChild(this.world, this.marker.view, this.banner);
+    this.view.addChild(
+      this.world,
+      this.marker.view,
+      this.ranking.view,
+      this.clock,
+      this.banner,
+    );
 
     this.view.eventMode = "static";
     this.view.on("pointerdown", (e) => {
@@ -95,9 +111,12 @@ export class Arena implements Scene {
     for (const snake of snakes) snake.move(dt, this.bounds);
     this.marker.update(dt, this.player, this.world);
     if (!this.over) {
+      this.timeLeft = Math.max(0, this.timeLeft - dt);
+      this.showTime();
       this.eat();
       this.fight();
-      this.checkForEnd();
+      this.ranking.update();
+      if (this.timeLeft === 0) this.timeUp();
     } else {
       this.over.time += dt;
       if (this.canMoveOn && this.input.wasPressed("confirm")) {
@@ -127,7 +146,10 @@ export class Arena implements Scene {
     }
     sizeLabel(this.banner, 10 * scale);
     this.banner.position.set(width / 2, height / 2);
+    sizeLabel(this.clock, 10 * scale);
+    this.clock.position.set(width / 2, 4 * scale);
     this.marker.resize(scale);
+    this.ranking.resize(scale);
   }
 
   private get snakes() {
@@ -177,6 +199,7 @@ export class Arena implements Scene {
       for (const dot of [...this.food.children]) {
         if (distance(dot, snake) < reach) {
           dot.destroy();
+          this.addDot();
           this.feed(snake);
         }
       }
@@ -220,9 +243,14 @@ export class Arena implements Scene {
     }
   }
 
-  // once the dots are gone, the longest snake wins
-  private checkForEnd() {
-    if (!this.player || this.food.children.length > 0) return;
+  private showTime() {
+    this.clock.text = String(Math.ceil(this.timeLeft));
+    this.clock.style.fill = this.timeLeft <= HURRY ? 0xd95763 : 0xffffff;
+  }
+
+  // the longest snake wins
+  private timeUp() {
+    if (!this.player) return;
     const longest = Math.max(0, ...this.rivals.map((r) => r.snake.bodyCount));
     if (this.player.bodyCount < longest) {
       this.end(false, "Leider zu kurz!\nNochmal? Tippen!");
@@ -241,12 +269,14 @@ export class Arena implements Scene {
   }
 
   private scatterFood() {
-    for (let i = 0; i < this.settings.dots; i++) {
-      const dot = new Sprite(art("food"));
-      dot.anchor.set(0.5);
-      dot.position.copyFrom(this.freeSpot());
-      this.food.addChild(dot);
-    }
+    for (let i = 0; i < this.settings.dots; i++) this.addDot();
+  }
+
+  private addDot() {
+    const dot = new Sprite(art("food"));
+    dot.anchor.set(0.5);
+    dot.position.copyFrom(this.freeSpot());
+    this.food.addChild(dot);
   }
 
   private freeSpot() {

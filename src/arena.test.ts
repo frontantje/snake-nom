@@ -43,8 +43,8 @@ afterEach(() => {
 });
 
 // the tests' own settings, so balancing the levels doesn't change them
-function newArena(rivals = 0, dots = 10, level = 1) {
-  const settings = { rivals, rivalSpeed: 0.8, dots };
+function newArena(rivals = 0, dots = 10, level = 1, seconds = 60) {
+  const settings = { rivals, rivalSpeed: 0.8, dots, seconds };
   const arena = new Arena(keys as unknown as Input, level, done, settings);
   arena.resize(WIDTH, HEIGHT, 1);
   arenas.push(arena);
@@ -107,13 +107,36 @@ describe("Arena", () => {
     const arena = newArena();
     const player = playerOf(arena);
     const parts = player.bodyCount;
-    const dots = dotsOf(arena).length;
-    dotsOf(arena)[0].position.set(player.x + 10, player.y);
+    const dot = dotsOf(arena)[0];
+    dot.position.set(player.x + 10, player.y);
 
-    runUntil(arena, 1, () => dotsOf(arena).length < dots);
+    runUntil(arena, 1, () => dot.destroyed);
 
-    expect(dotsOf(arena).length).toBe(dots - 1);
+    expect(dot.destroyed).toBe(true);
     expect(player.bodyCount).toBe(parts + 1);
+  });
+
+  it("puts a new dot somewhere else for every dot eaten", () => {
+    const arena = newArena();
+    const player = playerOf(arena);
+    const eaten = lastDot(arena, player.x + 10, player.y);
+
+    runUntil(arena, 1, () => eaten.destroyed);
+
+    const [fresh] = dotsOf(arena);
+    expect(dotsOf(arena)).toHaveLength(1);
+    expect(distance(fresh, player)).toBeGreaterThan(
+      player.radius + FOOD_RADIUS,
+    );
+  });
+
+  it("keeps as many dots on the field as the level asks for", () => {
+    const arena = newArena(2, 12);
+
+    for (let second = 0; second < 20; second++) {
+      runUntil(arena, 1, () => false);
+      expect(dotsOf(arena)).toHaveLength(12);
+    }
   });
 
   it("brings the snake to a tapped spot, also near the edges", () => {
@@ -234,6 +257,8 @@ describe("Arena", () => {
     expect(dot.destroyed).toBe(true);
     expect(rival.bodyCount).toBe(7);
 
+    // the dot that came back would be a goal too
+    for (const other of [...dotsOf(arena)]) other.destroy();
     expect(runUntil(arena, 2, goesForPlayer)).toBe(true);
   });
 
@@ -292,20 +317,18 @@ describe("Arena", () => {
     expect(done).toHaveBeenCalledExactlyOnceWith(false);
   });
 
-  it("ends the round when the dots are gone, won if no rival is longer", () => {
+  it("ends the round when the time is up, won if no rival is longer", () => {
     for (const rivalParts of [0, 20]) {
       done.mockClear();
-      const arena = newArena(1);
-      const player = playerOf(arena);
+      const arena = newArena(1, 10, 1, 2);
       const rival = rivalOf(arena);
       strip(rival);
       rival.grow(rivalParts);
       rival.placeAt(30, HEIGHT - 20, Math.PI);
-      const last = lastDot(arena, player.x + 20, player.y);
 
-      arena.update(DT);
+      runUntil(arena, 1.9, () => false);
       expect(arena["banner"].visible).toBe(false);
-      runUntil(arena, 1, () => last.destroyed);
+      runUntil(arena, 0.2, () => false);
 
       const won = rivalParts === 0;
       expect(arena["banner"].visible).toBe(true);
@@ -318,21 +341,55 @@ describe("Arena", () => {
   });
 
   it("says that all levels are done when the last one is won", () => {
-    const arena = newArena(0, 10, LAST_LEVEL);
-    const player = playerOf(arena);
-    const last = lastDot(arena, player.x + 20, player.y);
+    const arena = newArena(0, 10, LAST_LEVEL, 1);
 
-    runUntil(arena, 1, () => last.destroyed);
+    runUntil(arena, 1.1, () => false);
 
     expect(arena["banner"].text).toContain("Alle Level geschafft");
     expect(arena["banner"].text).not.toContain("Weiter");
   });
 
+  it("keeps the ranking of all snakes up to date during the round", () => {
+    const arena = newArena(2);
+    const rival = rivalOf(arena);
+    lastDot(arena, WIDTH - 20, HEIGHT - 20);
+    const topRow = () =>
+      [...arena["ranking"]["rows"].entries()].sort(
+        ([, a], [, b]) => a.view.y - b.view.y,
+      )[0][0];
+    expect(arena["ranking"]["rows"].size).toBe(3);
+    expect(topRow()).toBe(playerOf(arena));
+
+    rival.grow(3);
+    arena.update(DT);
+
+    expect(topRow()).toBe(rival);
+  });
+
+  it("counts the seconds down at the top, in red at the end", () => {
+    const arena = newArena(0, 10, 1, 30);
+    const clock = arena["clock"];
+    expect(clock.text).toBe("30");
+    expect(clock.x).toBe(WIDTH / 2);
+    expect(clock.y).toBeLessThan(HEIGHT / 10);
+
+    runUntil(arena, 1.1, () => false);
+    expect(clock.text).toBe("29");
+    expect(clock.style.fill).toBe(0xffffff);
+
+    runUntil(arena, 24.5, () => false);
+    expect(clock.text).toBe("5");
+    expect(clock.style.fill).toBe(0xd95763);
+    expect(arena["banner"].visible).toBe(false);
+
+    runUntil(arena, 5, () => false);
+    expect(clock.text).toBe("0");
+    expect(arena["banner"].visible).toBe(true);
+  });
+
   it("moves on with Enter or Space too, but only after a moment", () => {
-    const arena = newArena();
-    const player = playerOf(arena);
-    const last = lastDot(arena, player.x + 20, player.y);
-    runUntil(arena, 1, () => last.destroyed);
+    const arena = newArena(0, 10, 1, 1);
+    runUntil(arena, 2, () => arena["banner"].visible);
     const movedOn = () => done.mock.calls.length > 0;
 
     keys.pressed = ["confirm"];

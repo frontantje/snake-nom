@@ -30,15 +30,19 @@ browser remembers which levels are won.
 You're the green snake; at the start of a round, a ring and "Du!" point it out. The other
 snakes are after the yellow dots too, and after you. After biting you, a snake goes for
 something else first: a dot, or another snake. Level 1 has one of them, level 2 two,
-level 5 three and level 8 four. From level 3, they get a bit faster each level and there are
-more dots.
+level 5 three and level 8 four. From level 3, they get a bit faster each level, there are
+more dots, and the rounds last longer.
 
-- Every dot makes a snake one part longer and a bit bigger.
+- A round lasts 30 seconds in level 1; the clock at the top counts down and turns red for the
+  last 5 seconds. The start screen shows how long the next level lasts.
+- In the top left corner, every snake's head and length are listed, longest first.
+- Every dot makes a snake one part longer and a bit bigger. An eaten dot comes back somewhere
+  else right away.
 - A head that touches another snake's body bites that one part off, whatever the sizes. The
   biter gets one part longer, the bitten snake one part shorter. After a bite, the bitten snake
   blinks for half a second: it can't be bitten again, and it can't bite back.
 - A snake with no body left gets eaten when another head touches its head.
-- When all dots are gone, the biggest snake wins. If that's you, the next level opens. If your
+- When the time is up, the biggest snake wins. If that's you, the next level opens. If your
   head gets eaten, the round is over.
 
 The snakes never stop. They turn away by themselves before they reach the edge of the screen.

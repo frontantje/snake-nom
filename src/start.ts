@@ -1,14 +1,14 @@
 import { Container, Rectangle, type Text } from "pixi.js";
 import type { Input } from "./input";
 import { makeLabel, sizeLabel } from "./label";
-import { LAST_LEVEL } from "./levels";
+import { LAST_LEVEL, LEVELS } from "./levels";
 import { angleTo, clamp, type Point } from "./math";
 import type { Progress } from "./progress";
 import type { Scene } from "./scene";
 import { Snake } from "./snake";
 
 // the snake circles this much of the shorter screen side around a point below the title
-const CIRCLE = 0.18;
+const CIRCLE = 0.16;
 // radians ahead on its circle that the snake aims at
 const AIM_AHEAD = 0.6;
 // seconds before a tap starts a level, so taps meant for the round before don't
@@ -23,6 +23,7 @@ export class StartScreen implements Scene {
   private snake = new Snake({ length: 12 });
   private title: Text;
   private levelLabel = makeLabel();
+  private secondsLabel = makeLabel();
   // zone: where on the screen a tap counts for the arrow
   private arrows = [
     { label: makeLabel("<"), step: -1, zone: new Rectangle() },
@@ -45,6 +46,7 @@ export class StartScreen implements Scene {
     const labels = [
       this.title,
       this.levelLabel,
+      this.secondsLabel,
       ...this.arrows.map((a) => a.label),
     ];
     for (const label of labels) label.anchor.set(0.5);
@@ -84,6 +86,8 @@ export class StartScreen implements Scene {
     const y = height * 0.42;
     sizeLabel(this.levelLabel, size);
     this.levelLabel.position.set(width / 2, y);
+    sizeLabel(this.secondsLabel, 8 * scale);
+    this.secondsLabel.position.set(width / 2, y + 12 * scale);
     for (const { label, step, zone } of this.arrows) {
       const x = width / 2 + step * 4 * size;
       sizeLabel(label, size);
@@ -109,6 +113,7 @@ export class StartScreen implements Scene {
     const last = this.progress.unlocked;
     this.level = clamp(level, 1, last);
     this.levelLabel.text = `Level ${this.level}`;
+    this.secondsLabel.text = `${LEVELS[this.level - 1].seconds} Sekunden`;
     for (const { label, step } of this.arrows) {
       const next = this.level + step;
       label.visible = last > 1;
@@ -117,7 +122,7 @@ export class StartScreen implements Scene {
   }
 
   private get middle() {
-    return { x: this.bounds.width / 2, y: this.bounds.height * 0.72 };
+    return { x: this.bounds.width / 2, y: this.bounds.height * 0.75 };
   }
 
   // a point a bit further along the circle than the snake

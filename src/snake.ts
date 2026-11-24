@@ -28,7 +28,7 @@ const GREEN: Skin = { head: "head", body: "body", tail: "tail" };
 export class Snake {
   readonly view = new Container();
   heading = 0;
-  private skin: Skin;
+  readonly skin: Skin;
   // art pixels per second
   private speed: number;
   private head: Sprite;

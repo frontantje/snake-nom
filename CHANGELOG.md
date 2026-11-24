@@ -6,6 +6,23 @@ numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-24
+
+### Added
+
+- A clock at the top counts down the seconds left in a round, in red for the last 5.
+- A ranking in the top left corner: every snake's head and length, longest first. A tie puts
+  you first, as a tie at the end counts as your win.
+- The start screen shows how long the level lasts, under "Level N".
+
+### Changed
+
+- Every level has a time limit: 30 seconds in levels 1 and 2, then 5 more per level up to
+  70 seconds in level 10. When the time is up, the biggest snake wins. Being eaten still ends
+  the round straight away.
+- Eaten dots come back somewhere else right away, so a round no longer ends when the dots are
+  gone. A level's dot count is now how many are on the field at once.
+
 ## [0.4.0] - 2026-11-18
 
 ### Added
